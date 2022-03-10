@@ -1,16 +1,17 @@
+// ==UserScript==
+// @name         response-interception-plugin
+// @namespace    http://tampermonkey.net/
+// @version      0.1
+// @description  Custom response interception plugin for the browser
+// @author       Avan
+// @include *
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=gitee.com
+// @grant        none
+// ==/UserScript==
+
 ;(function () {
   const metaData = {
-    rules: [
-      {
-        url: 'baidu.com',
-        method: `
-          function middle(res, origin) {
-            console.log('拦截到数据 res')
-            return res
-          }
-        `,
-      },
-    ],
+    rules: [],
   }
 
   startInterception()
@@ -19,6 +20,38 @@
   function initUi() {
     initBox()
     initControl()
+    useRule()
+  }
+
+  function useRule() {
+    const delTempMethodName = []
+    const methods = metaData.rules.reduce((arr, cur) => {
+      const name = Math.random()
+      let str = cur.method
+      str += `window[name] = fn`
+      eval(str)
+      delTempMethodName.push(name)
+      return [...arr, window[name]]
+    }, [])
+
+    clearWindowMethod(delTempMethodName)
+
+    window.responseMiddle = function (res, origin) {
+      if (methods.length > 0) {
+        const newRes = methods.reduce((pre, fn) => {
+          return fn(pre, origin)
+        }, res)
+        return newRes
+      }
+      return res
+    }
+  }
+
+  function clearWindowMethod(names) {
+    if (names.length === 0) return
+    names.forEach(name => {
+      delete window[name]
+    })
   }
 
   function initBox() {
