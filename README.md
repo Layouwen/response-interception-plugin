@@ -10,6 +10,8 @@
 
 ## Usage
 
+### Use console
+
 set `window.responseMiddle` function
 
 **Example**
@@ -23,3 +25,15 @@ window.responseMiddle = function (res, origin) {
   return result
 }
 ```
+
+### Use control menu
+
+1. click `拦截` button
+
+2. click `添加规则` button
+
+3. input match and method callback function
+
+> callback function name must be `fn`
+
+4. click `保存规则` button

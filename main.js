@@ -15,23 +15,75 @@
   }
 
   startInterception()
+  initData()
   initUi()
+
+  function initData() {
+    const data = JSON.parse(localStorage.getItem('ripRules') || '[]')
+    metaData.rules = data
+  }
 
   function initUi() {
     initBox()
     initControl()
-    useRule()
+    bindControlEvent()
+    initInputEvent()
   }
 
-  function useRule() {
+  function initInputEvent() {
+    const $wrapper = document.querySelector('.rip-rules-wrapper')
+    Array.from($wrapper.children).forEach((el, i) => {
+      const $input = el.querySelector('input')
+      const $textarea = el.querySelector('textarea')
+      $input.addEventListener('input', e => {
+        metaData.rules[i].url = e.target.value
+      })
+      $textarea.addEventListener('input', e => {
+        metaData.rules[i].method = e.target.value
+      })
+    })
+  }
+
+  function bindControlEvent() {
+    const $add = document.querySelector('.rip-add')
+    const $confirm = document.querySelector('.rip-confirm')
+    $add.addEventListener('click', () => {
+      metaData.rules.push({ url: '', method: '' })
+      renderRuleItem(metaData.rules)
+      initInputEvent()
+    })
+    $confirm.addEventListener('click', () => {
+      saveMetaData()
+    })
+  }
+
+  function saveMetaData() {
+    localStorage.setItem('ripRules', JSON.stringify(metaData.rules))
+  }
+
+  function renderRuleItem(rules) {
+    const $wrapper = document.querySelector('.rip-rules-wrapper')
+    $wrapper.innerHTML = getItemHtml(rules)
+  }
+
+  function useRule(origin) {
+    if (!origin) return
     const delTempMethodName = []
     const methods = metaData.rules.reduce((arr, cur) => {
+      const match = new RegExp(cur.url, 'g')
+      window.test = origin
+      if (!match.test(origin.responseURL)) return arr
+
       const name = Math.random()
       let str = cur.method
-      str += `window[name] = fn`
+      str += `if(typeof fn === 'function') { window[name] = fn }`
       eval(str)
-      delTempMethodName.push(name)
-      return [...arr, window[name]]
+      if (window[name]) {
+        delTempMethodName.push(name)
+        return [...arr, window[name]]
+      } else {
+        return arr
+      }
     }, [])
 
     clearWindowMethod(delTempMethodName)
@@ -84,9 +136,11 @@
   function initControl() {
     const html = `
       <div class="rip-control">
-        ${getItemHtml(metaData.rules)}
+        <div class="rip-rules-wrapper">
+          ${getItemHtml(metaData.rules)}
+        </div>
         <button class="rip-add">添加规则</button>
-        <button class="rip-confirm">应用规则</button>
+        <button class="rip-confirm">保存规则</button>
       </div>
     `
 
@@ -120,18 +174,18 @@
     const $control = document.createElement('div')
     $control.innerHTML = html
     document.querySelector('body').appendChild($control)
+  }
 
-    function getItemHtml(rules) {
-      const result = rules.reduce((pre, cur) => (pre += createItemStr(cur)), '')
-      return result
+  function getItemHtml(rules) {
+    const result = rules.reduce((pre, cur) => (pre += createItemStr(cur)), '')
+    return result
+  }
 
-      function createItemStr(rule) {
-        return `<div class="rip-control-item">
+  function createItemStr(rule) {
+    return `<div class="rip-control-item">
           <label class="rip-control-item-url"><span style="width: 54px">url：</span><input type="text" value="${rule.url}"/></label>
           <label class="rip-control-item-method"><span style="width: 54px">method：</span><textarea>${rule.method}</textarea></label>
         </div>`
-      }
-    }
   }
 
   function startInterception() {
@@ -160,6 +214,7 @@
 
   function responseGetHandle(accessor) {
     return function () {
+      useRule(this)
       let response = accessor.get.call(this)
       if (this.responseMiddle) {
         response = this.responseMiddle(response)
