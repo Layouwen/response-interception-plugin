@@ -1,8 +1,12 @@
 # Response Interception Plugin
 
-## install
+## Install
 
-### Tampermonkey
+### Automatic installation
+
+[https://greasyfork.org/zh-CN/scripts/441275-response-interception-plugin](https://greasyfork.org/zh-CN/scripts/441275-response-interception-plugin)
+
+### Manual installation
 
 1. click `Create a new script...`
 
